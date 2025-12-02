@@ -1,12 +1,3 @@
 # Minimal pre-commit configuration
 # This allows pre-commit to run without errors
 repos: []
-
-
-
-
-
-
-
-
-

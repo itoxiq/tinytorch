@@ -1,1 +1,0 @@
-../../modules/02_activations/ABOUT.md

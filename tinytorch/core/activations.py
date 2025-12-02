@@ -15,18 +15,19 @@
 # ║     happens! The tinytorch/ directory is just the compiled output.           ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 # %% auto 0
-__all__ = ['Sigmoid', 'ReLU', 'Tanh', 'GELU', 'Softmax']
+__all__ = ['TOLERANCE', 'Sigmoid', 'ReLU', 'Tanh', 'GELU', 'Softmax']
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 3
+# %% ../../modules/02_activations/activations.ipynb 3
 import numpy as np
 from typing import Optional
-import sys
-import os
 
+# Import from TinyTorch package (previous modules must be completed and exported)
+from .tensor import Tensor
 
-# Import will be in export cell
+# Constants for numerical comparisons
+TOLERANCE = 1e-10  # Small tolerance for floating-point comparisons in tests
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 8
+# %% ../../modules/02_activations/activations.ipynb 8
 from .tensor import Tensor
 
 class Sigmoid:
@@ -59,15 +60,25 @@ class Sigmoid:
         """
         ### BEGIN SOLUTION
         # Apply sigmoid: 1 / (1 + exp(-x))
-        result_data = 1.0 / (1.0 + np.exp(-x.data))
-        result = Tensor(result_data)
-        
-        # Track gradients if autograd is enabled and input requires_grad
-        if SigmoidBackward is not None and x.requires_grad:
-            result.requires_grad = True
-            result._grad_fn = SigmoidBackward(x, result)
-        
-        return result
+        # Clip extreme values to prevent overflow (sigmoid(-500) ≈ 0, sigmoid(500) ≈ 1)
+        # Clipping at ±500 ensures exp() stays within float64 range
+        z = np.clip(x.data, -500, 500)
+
+        # Use numerically stable sigmoid
+        # For positive values: 1 / (1 + exp(-x))
+        # For negative values: exp(x) / (1 + exp(x)) = 1 / (1 + exp(-x)) after clipping
+        result_data = np.zeros_like(z)
+
+        # Positive values (including zero)
+        pos_mask = z >= 0
+        result_data[pos_mask] = 1.0 / (1.0 + np.exp(-z[pos_mask]))
+
+        # Negative values
+        neg_mask = z < 0
+        exp_z = np.exp(z[neg_mask])
+        result_data[neg_mask] = exp_z / (1.0 + exp_z)
+
+        return Tensor(result_data)
         ### END SOLUTION
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -78,7 +89,7 @@ class Sigmoid:
         """Compute gradient (implemented in Module 05)."""
         pass  # Will implement backward pass in Module 05
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 12
+# %% ../../modules/02_activations/activations.ipynb 12
 class ReLU:
     """
     ReLU activation: f(x) = max(0, x)
@@ -120,7 +131,7 @@ class ReLU:
         """Compute gradient (implemented in Module 05)."""
         pass  # Will implement backward pass in Module 05
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 16
+# %% ../../modules/02_activations/activations.ipynb 16
 class Tanh:
     """
     Tanh activation: f(x) = (e^x - e^(-x))/(e^x + e^(-x))
@@ -162,7 +173,7 @@ class Tanh:
         """Compute gradient (implemented in Module 05)."""
         pass  # Will implement backward pass in Module 05
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 20
+# %% ../../modules/02_activations/activations.ipynb 20
 class GELU:
     """
     GELU activation: f(x) = x * Φ(x) ≈ x * Sigmoid(1.702 * x)
@@ -209,7 +220,7 @@ class GELU:
         """Compute gradient (implemented in Module 05)."""
         pass  # Will implement backward pass in Module 05
 
-# %% ../../modules/source/02_activations/activations_dev.ipynb 24
+# %% ../../modules/02_activations/activations.ipynb 24
 class Softmax:
     """
     Softmax activation: f(x_i) = e^(x_i) / Σ(e^(x_j))

@@ -15,25 +15,21 @@
 # ║     happens! The tinytorch/ directory is just the compiled output.           ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 # %% auto 0
-__all__ = ['import_previous_module', 'log_softmax', 'MSELoss', 'CrossEntropyLoss', 'BinaryCrossEntropyLoss']
+__all__ = ['EPSILON', 'log_softmax', 'MSELoss', 'CrossEntropyLoss', 'BinaryCrossEntropyLoss']
 
-# %% ../../modules/source/04_losses/losses_dev.ipynb 3
+# %% ../../modules/04_losses/losses.ipynb 3
 import numpy as np
 from typing import Optional
 
-def import_previous_module(module_name: str, component_name: str):
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', module_name))
-    module = __import__(f"{module_name.split('_')[1]}_dev")
-    return getattr(module, component_name)
-
-# Import from tinytorch package
+# Import from TinyTorch package (previous modules must be completed and exported)
 from .tensor import Tensor
-from .layers import Linear
 from .activations import ReLU
+from .layers import Linear
 
-# %% ../../modules/source/04_losses/losses_dev.ipynb 8
+# Constants for numerical stability
+EPSILON = 1e-7  # Small value to prevent log(0) and numerical instability
+
+# %% ../../modules/04_losses/losses.ipynb 8
 def log_softmax(x: Tensor, dim: int = -1) -> Tensor:
     """
     Compute log-softmax with numerical stability.
@@ -70,7 +66,7 @@ def log_softmax(x: Tensor, dim: int = -1) -> Tensor:
     return Tensor(result)
     ### END SOLUTION
 
-# %% ../../modules/source/04_losses/losses_dev.ipynb 11
+# %% ../../modules/04_losses/losses.ipynb 11
 class MSELoss:
     """Mean Squared Error loss for regression tasks."""
 
@@ -127,7 +123,7 @@ class MSELoss:
         """
         pass
 
-# %% ../../modules/source/04_losses/losses_dev.ipynb 14
+# %% ../../modules/04_losses/losses.ipynb 14
 class CrossEntropyLoss:
     """Cross-entropy loss for multi-class classification."""
 
@@ -188,7 +184,7 @@ class CrossEntropyLoss:
         """
         pass
 
-# %% ../../modules/source/04_losses/losses_dev.ipynb 17
+# %% ../../modules/04_losses/losses.ipynb 17
 class BinaryCrossEntropyLoss:
     """Binary cross-entropy loss for binary classification."""
 
@@ -221,7 +217,7 @@ class BinaryCrossEntropyLoss:
         """
         ### BEGIN SOLUTION
         # Step 1: Clamp predictions to avoid numerical issues with log(0) and log(1)
-        eps = 1e-7
+        eps = EPSILON
         clamped_preds = np.clip(predictions.data, eps, 1 - eps)
 
         # Step 2: Compute binary cross-entropy

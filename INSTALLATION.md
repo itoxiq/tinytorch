@@ -21,22 +21,6 @@ Complete installation guide for TinyTorch using modern Python package management
 - **Operating System**: macOS, Linux, or Windows (WSL2 recommended for Windows)
 - **Disk Space**: ~2GB for full installation with dependencies
 
-### Required Tools
-
-Install `uv` - the fast Python package installer and resolver:
-
-```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Or using pip
-pip install uv
-
-# Verify installation
-uv --version
-```
-
----
 
 ## Quick Start (Recommended)
 
@@ -67,48 +51,6 @@ That's it! You're ready to build ML systems from scratch.
 
 ---
 
-## Installation Methods
-
-### Using `uv` with Setup Script (Recommended)
-
-The setup script handles everything automatically:
-
-```bash
-# Run the setup script
-./setup-uv.sh
-
-# Activate the environment
-source activate.sh
-
-# Verify
-tito system doctor
-```
-
-**Why uv?**
-- ⚡ 10-100x faster than pip
-- 🔒 Deterministic dependency resolution
-- 🎯 Automatic virtual environment management
-- 🔄 Better dependency conflict resolution
-- 🛠️ Simplified single-tool workflow
-
-### Manual Installation with UV
-
-If you prefer manual control:
-
-```bash
-# Install with all development dependencies
-uv sync
-
-# Or install specific dependency groups
-uv sync --extra dev              # Development tools only
-uv sync --extra visualization    # Add plotting capabilities
-uv sync --extra all              # Everything
-
-# Activate environment
-source .venv/bin/activate
-```
-
----
 
 ## Verification
 
