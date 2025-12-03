@@ -98,13 +98,6 @@ class DoctorCommand(BaseCommand):
             else:
                 struct_table.add_row(path, "[red]❌ Missing[/red]", desc)
 
-        # Check for tito CLI script in venv
-        tito_script_path = self.venv_path / 'bin' / 'tito'
-        if tito_script_path.exists():
-            struct_table.add_row('.venv/bin/tito', "[green]✅ Found[/green]", "CLI script")
-        else:
-            struct_table.add_row('.venv/bin/tito', "[red]❌ Missing[/red]", "CLI script")
-        
         console.print(struct_table)
         console.print()
         
