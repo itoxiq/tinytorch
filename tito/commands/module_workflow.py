@@ -329,8 +329,17 @@ class ModuleWorkflowCommand(BaseCommand):
         ))
         
         success = True
-        
-        # Step 1: Run integration tests
+
+        # Step 1: Generate .py file from notebook (required for tests)
+        if not skip_export:
+            self.console.print("📝 Converting notebook to Python file...")
+            convert_result = self.convert_notebook_to_py(module_name)
+            if convert_result != 0:
+                self.console.print(f"[red]❌ Notebook conversion failed for {module_name}[/red]")
+                return 1
+            self.console.print("✅ Python file generated!")
+
+        # Step 2: Run integration tests (now that .py file exists)
         if not skip_tests:
             self.console.print("🧪 Running integration tests...")
             test_result = self.run_module_tests(module_name)
@@ -339,8 +348,8 @@ class ModuleWorkflowCommand(BaseCommand):
                 self.console.print("💡 Fix the issues and try again")
                 return 1
             self.console.print("✅ All tests passed!")
-        
-        # Step 2: Export to package
+
+        # Step 3: Export to package (nbdev_export)
         if not skip_export:
             self.console.print("📦 Exporting to TinyTorch package...")
             export_result = self.export_module(module_name)
@@ -350,34 +359,78 @@ class ModuleWorkflowCommand(BaseCommand):
             else:
                 self.console.print("✅ Module exported successfully!")
         
-        # Step 3: Update progress tracking
+        # Step 4: Update progress tracking
         self.update_progress(normalized, module_name)
-        
-        # Step 4: Check for milestone unlocks
+
+        # Step 5: Check for milestone unlocks
         if success:
             self._check_milestone_unlocks(module_name)
-        
-        # Step 5: Show next steps
+
+        # Step 6: Show next steps
         self.show_next_steps(normalized)
         
         return 0 if success else 1
     
+    def convert_notebook_to_py(self, module_name: str) -> int:
+        """Convert notebook to Python file using jupytext."""
+        try:
+            module_dir = self.config.modules_dir / module_name
+            module_short_name = module_name.split('_', 1)[1] if '_' in module_name else module_name
+
+            notebook_file = module_dir / f"{module_short_name}.ipynb"
+            dev_file = module_dir / f"{module_short_name}.py"
+
+            if not notebook_file.exists():
+                self.console.print(f"[red]❌ Notebook not found: {notebook_file}[/red]")
+                return 1
+
+            # Prefer venv jupytext, fallback to system if needed
+            jupytext_path = "jupytext"
+            venv_jupytext = self.config.project_root / ".venv" / "bin" / "jupytext"
+
+            if venv_jupytext.exists():
+                # Test venv jupytext first
+                test_result = subprocess.run([str(venv_jupytext), "--version"],
+                                           capture_output=True, text=True)
+                if test_result.returncode == 0:
+                    jupytext_path = str(venv_jupytext)
+
+            # Use jupytext to convert notebook to Python file
+            result = subprocess.run([
+                jupytext_path, "--to", "py:percent", str(notebook_file), "--output", str(dev_file)
+            ], capture_output=True, text=True, cwd=self.config.project_root)
+
+            if result.returncode == 0:
+                return 0
+            else:
+                self.console.print(f"[red]Jupytext output:[/red]\n{result.stdout}")
+                if result.stderr:
+                    self.console.print(f"[red]Errors:[/red]\n{result.stderr}")
+                return 1
+
+        except FileNotFoundError:
+            self.console.print(f"[red]❌ Jupytext not found. Install with: pip install jupytext[/red]")
+            return 1
+        except Exception as e:
+            self.console.print(f"[red]Error converting notebook: {e}[/red]")
+            return 1
+
     def run_module_tests(self, module_name: str) -> int:
         """Run tests for a specific module."""
         try:
             # Run the module's inline tests
             module_dir = self.config.modules_dir / module_name
             dev_file = module_dir / f"{module_name.split('_')[1]}.py"
-            
+
             if not dev_file.exists():
                 self.console.print(f"[yellow]⚠️  No dev file found: {dev_file}[/yellow]")
                 return 0
-            
+
             # Execute the Python file to run inline tests
             result = subprocess.run([
                 sys.executable, str(dev_file)
             ], capture_output=True, text=True, cwd=module_dir)
-            
+
             if result.returncode == 0:
                 return 0
             else:
@@ -385,7 +438,7 @@ class ModuleWorkflowCommand(BaseCommand):
                 if result.stderr:
                     self.console.print(f"[red]Errors:[/red]\n{result.stderr}")
                 return 1
-                
+
         except Exception as e:
             self.console.print(f"[red]Error running tests: {e}[/red]")
             return 1
