@@ -103,3 +103,36 @@ Each module folder (e.g., `modules/01_tensor/`) contains:
     - Integration with the overall system
 
 **Important**: Always edit the `.ipynb` notebook, never the generated `.py` file directly. The `.py` file will be overwritten when you run `tito module complete`.
+
+## Utility Scripts
+
+### Removing Solution Code
+
+The `scripts/remove_solutions.sh` script helps prepare notebooks for distribution by removing solution code blocks.
+
+**Usage:**
+```bash
+# Process all module folders
+./scripts/remove_solutions.sh
+
+# Process only folder 01
+./scripts/remove_solutions.sh 01
+
+# Process multiple specific folders
+./scripts/remove_solutions.sh 01 03 07
+
+# Process a range of folders
+./scripts/remove_solutions.sh --range 01-05
+
+# Combine range with specific folders
+./scripts/remove_solutions.sh --range 01-05 07 09
+```
+
+This script:
+
+-   Removes code between `# BEGIN SOLUTION` and `# END SOLUTION` markers in notebooks
+-   Preserves the marker comments themselves (so you know where solutions should go)
+-   Allows selective processing: all folders (default), individual folders, ranges, or combinations
+-   Automatically skips `_solution.ipynb` files
+
+**Note**: The script also removes the comments inside of the solution blocks which may contain hints or explanations.
