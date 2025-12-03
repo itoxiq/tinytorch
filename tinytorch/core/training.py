@@ -17,7 +17,7 @@
 # %% auto 0
 __all__ = ['CosineSchedule', 'save_checkpoint', 'load_checkpoint', 'Trainer']
 
-# %% ../../modules/source/07_training/training_dev.ipynb 1
+# %% ../../modules/07_training/training.ipynb 1
 import numpy as np
 import pickle
 import time
@@ -32,7 +32,7 @@ from .layers import Linear
 from .losses import MSELoss, CrossEntropyLoss
 from .optimizers import SGD, AdamW
 
-# %% ../../modules/source/07_training/training_dev.ipynb 6
+# %% ../../modules/07_training/training.ipynb 6
 class CosineSchedule:
     """
     Cosine annealing learning rate schedule.
@@ -71,7 +71,7 @@ class CosineSchedule:
         return self.min_lr + (self.max_lr - self.min_lr) * cosine_factor
     ### END SOLUTION
 
-# %% ../../modules/source/07_training/training_dev.ipynb 14
+# %% ../../modules/07_training/training.ipynb 14
 def save_checkpoint(checkpoint_dict: Dict[str, Any], path: str):
     """
     Save checkpoint dictionary to disk using pickle.
@@ -117,7 +117,7 @@ def save_checkpoint(checkpoint_dict: Dict[str, Any], path: str):
     print(f"✓ Checkpoint saved: {path}")
     ### END SOLUTION
 
-# %% ../../modules/source/07_training/training_dev.ipynb 15
+# %% ../../modules/07_training/training.ipynb 15
 def load_checkpoint(path: str) -> Dict[str, Any]:
     """
     Load checkpoint dictionary from disk using pickle.
@@ -155,7 +155,7 @@ def load_checkpoint(path: str) -> Dict[str, Any]:
     return checkpoint
     ### END SOLUTION
 
-# %% ../../modules/source/07_training/training_dev.ipynb 19
+# %% ../../modules/07_training/training.ipynb 19
 class Trainer:
     """
     Complete training orchestrator for neural networks.

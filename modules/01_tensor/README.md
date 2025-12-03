@@ -102,9 +102,11 @@ This module teaches patterns used in production frameworks:
 
 ## Files in This Module
 
-- `tensor_dev.py`: Your working implementation (Jupyter notebook format)
-- `test_tensor.py`: Comprehensive test suite (run with pytest)
+- `tensor.py`: Your working implementation (Jupyter notebook format) - **edit this file**
+- `tensor_solution.py`: Reference solution for comparison
 - `README.md`: This file
+
+**Note**: When you run `tito module complete 01`, the system exports your `tensor.py` to the TinyTorch package.
 
 ## Next Steps
 

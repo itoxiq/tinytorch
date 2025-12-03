@@ -46,6 +46,7 @@ from .commands.olympics import OlympicsCommand
 from .commands.setup import SetupCommand
 from .commands.benchmark import BenchmarkCommand
 from .commands.community import CommunityCommand
+from .commands.progress import ProgressCommand
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +81,7 @@ class TinyTorchCLI:
             'olympics': OlympicsCommand,
             'benchmark': BenchmarkCommand,
             'community': CommunityCommand,
+            'progress': ProgressCommand,
             # Convenience commands
             'notebooks': NotebooksCommand,
             'export': ExportCommand,
@@ -106,6 +108,7 @@ Command Groups:
   milestone    Epic achievements - celebrate major capability unlocks
   leaderboard  Community showcase - share progress, connect with learners
   olympics     Competition events - friendly challenges and recognition
+  progress     Manage module progress tracking (reset, show)
 
 Convenience Shortcuts:
   export       Quick export (alias for: tito module export)

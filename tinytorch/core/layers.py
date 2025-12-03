@@ -15,66 +15,17 @@
 # ║     happens! The tinytorch/ directory is just the compiled output.           ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 # %% auto 0
-__all__ = ['XAVIER_SCALE_FACTOR', 'HE_SCALE_FACTOR', 'DROPOUT_MIN_PROB', 'DROPOUT_MAX_PROB', 'Layer', 'Linear', 'Dropout']
+__all__ = ['Linear', 'Dropout']
 
 # %% ../../modules/03_layers/layers.ipynb 1
 import numpy as np
 
-# Import from TinyTorch package (previous modules must be completed and exported)
+# Import dependencies from tinytorch package
 from .tensor import Tensor
 from .activations import ReLU, Sigmoid
 
-# Constants for weight initialization
-XAVIER_SCALE_FACTOR = 1.0  # Xavier/Glorot initialization uses sqrt(1/fan_in)
-HE_SCALE_FACTOR = 2.0  # He initialization uses sqrt(2/fan_in) for ReLU
-
-# Constants for dropout
-DROPOUT_MIN_PROB = 0.0  # Minimum dropout probability (no dropout)
-DROPOUT_MAX_PROB = 1.0  # Maximum dropout probability (drop everything)
-
 # %% ../../modules/03_layers/layers.ipynb 6
-class Layer:
-    """
-    Base class for all neural network layers.
-
-    All layers should inherit from this class and implement:
-    - forward(x): Compute layer output
-    - parameters(): Return list of trainable parameters
-
-    The __call__ method is provided to make layers callable.
-    """
-
-    def forward(self, x):
-        """
-        Forward pass through the layer.
-
-        Args:
-            x: Input tensor
-
-        Returns:
-            Output tensor after transformation
-        """
-        raise NotImplementedError("Subclasses must implement forward()")
-
-    def __call__(self, x, *args, **kwargs):
-        """Allow layer to be called like a function."""
-        return self.forward(x, *args, **kwargs)
-
-    def parameters(self):
-        """
-        Return list of trainable parameters.
-
-        Returns:
-            List of Tensor objects with requires_grad=True
-        """
-        return []  # Base class has no parameters
-
-    def __repr__(self):
-        """String representation of the layer."""
-        return f"{self.__class__.__name__}()"
-
-# %% ../../modules/03_layers/layers.ipynb 8
-class Linear(Layer):
+class Linear:
     """
     Linear (fully connected) layer: y = xW + b
 
@@ -110,7 +61,7 @@ class Linear(Layer):
         self.out_features = out_features
 
         # Xavier/Glorot initialization for stable gradients
-        scale = np.sqrt(XAVIER_SCALE_FACTOR / in_features)
+        scale = np.sqrt(1.0 / in_features)
         weight_data = np.random.randn(in_features, out_features) * scale
         self.weight = Tensor(weight_data, requires_grad=True)
 
@@ -183,8 +134,8 @@ class Linear(Layer):
         bias_str = f", bias={self.bias is not None}"
         return f"Linear(in_features={self.in_features}, out_features={self.out_features}{bias_str})"
 
-# %% ../../modules/03_layers/layers.ipynb 16
-class Dropout(Layer):
+# %% ../../modules/03_layers/layers.ipynb 10
+class Dropout:
     """
     Dropout layer for regularization.
 
@@ -207,8 +158,8 @@ class Dropout(Layer):
         >>> dropout = Dropout(0.5)  # Zero 50% of elements during training
         """
         ### BEGIN SOLUTION
-        if not DROPOUT_MIN_PROB <= p <= DROPOUT_MAX_PROB:
-            raise ValueError(f"Dropout probability must be between {DROPOUT_MIN_PROB} and {DROPOUT_MAX_PROB}, got {p}")
+        if not 0.0 <= p <= 1.0:
+            raise ValueError(f"Dropout probability must be between 0 and 1, got {p}")
         self.p = p
         ### END SOLUTION
 
@@ -216,17 +167,13 @@ class Dropout(Layer):
         """
         Forward pass through dropout layer.
 
-        During training: randomly zeros elements with probability p
-        During inference: scales outputs by (1-p) to maintain expected value
-
-        This prevents overfitting by forcing the network to not rely on specific neurons.
-
-        TODO: Implement dropout forward pass
+        TODO: Apply dropout during training, pass through during inference
 
         APPROACH:
-        1. If training=False or p=0, return input unchanged
-        2. If p=1, return zeros (preserve requires_grad)
-        3. Otherwise: create random mask, apply it, scale by 1/(1-p)
+        1. If not training, return input unchanged
+        2. If training, create random mask with probability (1-p)
+        3. Multiply input by mask and scale by 1/(1-p)
+        4. Return result as new Tensor
 
         EXAMPLE:
         >>> dropout = Dropout(0.5)
@@ -240,13 +187,13 @@ class Dropout(Layer):
         - training=False should return input unchanged
         """
         ### BEGIN SOLUTION
-        if not training or self.p == DROPOUT_MIN_PROB:
+        if not training or self.p == 0.0:
             # During inference or no dropout, pass through unchanged
             return x
 
-        if self.p == DROPOUT_MAX_PROB:
+        if self.p == 1.0:
             # Drop everything (preserve requires_grad for gradient flow)
-            return Tensor(np.zeros_like(x.data), requires_grad=x.requires_grad)
+            return Tensor(np.zeros_like(x.data), requires_grad=x.requires_grad if hasattr(x, 'requires_grad') else False)
 
         # During training, apply dropout
         keep_prob = 1.0 - self.p

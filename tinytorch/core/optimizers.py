@@ -17,14 +17,14 @@
 # %% auto 0
 __all__ = ['Optimizer', 'SGD', 'Adam', 'AdamW']
 
-# %% ../../modules/source/06_optimizers/optimizers_dev.ipynb 1
+# %% ../../modules/06_optimizers/optimizers.ipynb 1
 import numpy as np
 from typing import List, Union, Optional, Dict, Any
 
 # Import Tensor from Module 01 (now with gradient support from Module 05)
 from .tensor import Tensor
 
-# %% ../../modules/source/06_optimizers/optimizers_dev.ipynb 5
+# %% ../../modules/06_optimizers/optimizers.ipynb 5
 class Optimizer:
     """
     Base class for all optimizers.
@@ -96,7 +96,7 @@ class Optimizer:
         """
         raise NotImplementedError("Subclasses must implement step()")
 
-# %% ../../modules/source/06_optimizers/optimizers_dev.ipynb 9
+# %% ../../modules/06_optimizers/optimizers.ipynb 9
 class SGD(Optimizer):
     """
     Stochastic Gradient Descent with momentum.
@@ -162,8 +162,8 @@ class SGD(Optimizer):
             if param.grad is None:
                 continue
 
-            # Get gradient (param.grad is already a numpy array)
-            grad = param.grad
+            # Get gradient data (handle both Tensor and numpy array)
+            grad = param.grad.data if isinstance(param.grad, Tensor) else param.grad
 
             # Apply weight decay
             if self.weight_decay != 0:
@@ -186,7 +186,7 @@ class SGD(Optimizer):
         self.step_count += 1
         ### END SOLUTION
 
-# %% ../../modules/source/06_optimizers/optimizers_dev.ipynb 13
+# %% ../../modules/06_optimizers/optimizers.ipynb 13
 class Adam(Optimizer):
     """
     Adam optimizer with adaptive learning rates.
@@ -263,8 +263,8 @@ class Adam(Optimizer):
             if param.grad is None:
                 continue
 
-            # Get gradient (param.grad is already a numpy array)
-            grad = param.grad
+            # Get gradient data (handle both Tensor and numpy array)
+            grad = param.grad.data if isinstance(param.grad, Tensor) else param.grad
 
             # Apply weight decay
             if self.weight_decay != 0:
@@ -293,7 +293,7 @@ class Adam(Optimizer):
             param.data = param.data - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
         ### END SOLUTION
 
-# %% ../../modules/source/06_optimizers/optimizers_dev.ipynb 17
+# %% ../../modules/06_optimizers/optimizers.ipynb 17
 class AdamW(Optimizer):
     """
     AdamW optimizer with decoupled weight decay.
@@ -366,8 +366,8 @@ class AdamW(Optimizer):
             if param.grad is None:
                 continue
 
-            # Get gradient (NOT modified by weight decay) - param.grad is already a numpy array
-            grad = param.grad
+            # Get gradient data (handle both Tensor and numpy array)
+            grad = param.grad.data if isinstance(param.grad, Tensor) else param.grad
 
             # Initialize buffers if needed
             if self.m_buffers[i] is None:

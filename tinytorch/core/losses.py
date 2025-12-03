@@ -15,19 +15,16 @@
 # ║     happens! The tinytorch/ directory is just the compiled output.           ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 # %% auto 0
-__all__ = ['EPSILON', 'log_softmax', 'MSELoss', 'CrossEntropyLoss', 'BinaryCrossEntropyLoss']
+__all__ = ['log_softmax', 'MSELoss', 'CrossEntropyLoss', 'BinaryCrossEntropyLoss']
 
 # %% ../../modules/04_losses/losses.ipynb 3
 import numpy as np
 from typing import Optional
 
-# Import from TinyTorch package (previous modules must be completed and exported)
-from .tensor import Tensor
-from .activations import ReLU
-from .layers import Linear
-
-# Constants for numerical stability
-EPSILON = 1e-7  # Small value to prevent log(0) and numerical instability
+# Import dependencies from previous modules
+from .tensor import Tensor  # Module 01: Foundation
+from .layers import Linear  # Module 03: Layers
+from .activations import ReLU  # Module 02: Activations
 
 # %% ../../modules/04_losses/losses.ipynb 8
 def log_softmax(x: Tensor, dim: int = -1) -> Tensor:
@@ -217,7 +214,7 @@ class BinaryCrossEntropyLoss:
         """
         ### BEGIN SOLUTION
         # Step 1: Clamp predictions to avoid numerical issues with log(0) and log(1)
-        eps = EPSILON
+        eps = 1e-7
         clamped_preds = np.clip(predictions.data, eps, 1 - eps)
 
         # Step 2: Compute binary cross-entropy

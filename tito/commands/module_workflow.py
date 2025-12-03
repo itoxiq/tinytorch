@@ -52,6 +52,11 @@ class ModuleWorkflowCommand(BaseCommand):
             'module_number',
             help='Module number to start (01, 02, 03, etc.)'
         )
+        start_parser.add_argument(
+            '--code',
+            action='store_true',
+            help='Open notebook in VS Code instead of Jupyter Lab'
+        )
         
         # RESUME command - continue working on a module
         resume_parser = subparsers.add_parser(
@@ -62,6 +67,11 @@ class ModuleWorkflowCommand(BaseCommand):
             'module_number',
             nargs='?',
             help='Module number to resume (01, 02, 03, etc.) - defaults to last worked'
+        )
+        resume_parser.add_argument(
+            '--code',
+            action='store_true',
+            help='Open notebook in VS Code instead of Jupyter Lab'
         )
         
         # COMPLETE command - finish and validate a module
@@ -146,8 +156,8 @@ class ModuleWorkflowCommand(BaseCommand):
             "05": "05_autograd",
             "06": "06_optimizers",
             "07": "07_training",
-            "08": "08_spatial",
-            "09": "09_dataloader",
+            "08": "08_dataloader",
+            "09": "09_spatial",
             "10": "10_tokenization",
             "11": "11_embeddings",
             "12": "12_attention",
@@ -168,7 +178,7 @@ class ModuleWorkflowCommand(BaseCommand):
             return f"{int(module_input):02d}"
         return module_input
     
-    def start_module(self, module_number: str) -> int:
+    def start_module(self, module_number: str, use_vscode: bool = False) -> int:
         """Start working on a module (first time)."""
         module_mapping = self.get_module_mapping()
         normalized = self.normalize_module_number(module_number)
@@ -193,9 +203,9 @@ class ModuleWorkflowCommand(BaseCommand):
         self.console.print("💡 Work in Jupyter, save your changes, then run:")
         self.console.print(f"   [bold cyan]tito module complete {normalized}[/bold cyan]")
         
-        return self._open_jupyter(module_name)
+        return self._open_jupyter(module_name, use_vscode)
     
-    def resume_module(self, module_number: Optional[str] = None) -> int:
+    def resume_module(self, module_number: Optional[str] = None, use_vscode: bool = False) -> int:
         """Resume working on a module (continue previous work)."""
         module_mapping = self.get_module_mapping()
         
@@ -230,17 +240,66 @@ class ModuleWorkflowCommand(BaseCommand):
         self.console.print("💡 Continue your work, then run:")
         self.console.print(f"   [bold cyan]tito module complete {normalized}[/bold cyan]")
         
-        return self._open_jupyter(module_name)
+        return self._open_jupyter(module_name, use_vscode)
     
-    def _open_jupyter(self, module_name: str) -> int:
-        """Open Jupyter Lab for a module."""
-        # Use the existing view command
-        fake_args = Namespace()
-        fake_args.module = module_name
-        fake_args.force = False
+    def _open_jupyter(self, module_name: str, use_vscode: bool = False) -> int:
+        """Open Jupyter Lab for a module with VS Code integration."""
+        import subprocess
         
-        view_command = ViewCommand(self.config)
-        return view_command.run(fake_args)
+        # Find the notebook file (prefer non-solution version)
+        module_dir = self.config.modules_dir / module_name
+        module_short_name = module_name.split('_', 1)[1] if '_' in module_name else module_name
+        
+        # Look for the student notebook (without _solution)
+        notebook_file = module_dir / f"{module_short_name}.ipynb"
+        
+        if not notebook_file.exists():
+            # Fallback: look for any .ipynb file that's not a solution
+            notebook_files = [nb for nb in module_dir.glob("*.ipynb") if "_solution" not in nb.name]
+            if not notebook_files:
+                self.console.print(f"[yellow]⚠️  No notebook found in {module_name}[/yellow]")
+                self.console.print(f"[dim]Expected: {notebook_file}[/dim]")
+                return 1
+            notebook_file = notebook_files[0]
+        
+        # Open in VS Code if --code flag is used
+        if use_vscode:
+            try:
+                subprocess.run(['code', str(notebook_file)], check=True)
+                self.console.print(f"[green]✅ Opened {notebook_file.name} in VS Code[/green]")
+                return 0
+            except subprocess.CalledProcessError:
+                self.console.print(f"[yellow]⚠️  Could not open in VS Code[/yellow]")
+                self.console.print(f"[cyan]📓 Notebook: {notebook_file}[/cyan]")
+                return 1
+            except FileNotFoundError:
+                self.console.print(f"[yellow]⚠️  VS Code command not found[/yellow]")
+                self.console.print(f"[cyan]📓 Notebook: {notebook_file}[/cyan]")
+                return 1
+        
+        # Launch Jupyter Lab with VS Code integration
+        try:
+            subprocess.Popen([
+                "jupyter", "lab", "--ServerApp.use_redirect_file=False"
+            ], cwd=module_dir)
+            self.console.print(f"[green]✅ Starting Jupyter Lab for {module_name}[/green]")
+            self.console.print(f"[cyan]📓 Notebook: {notebook_file.name}[/cyan]")
+            self.console.print(f"[dim]🌐 Jupyter Lab will open in your browser[/dim]")
+            return 0
+        except FileNotFoundError:
+            self.console.print(Panel(
+                "[red]❌ Jupyter Lab not found. Install with: pip install jupyterlab[/red]", 
+                title="Error", 
+                border_style="red"
+            ))
+            return 1
+        except Exception as e:
+            self.console.print(Panel(
+                f"[red]❌ Failed to launch Jupyter Lab: {e}[/red]", 
+                title="Error", 
+                border_style="red"
+            ))
+            return 1
     
     def complete_module(self, module_number: Optional[str] = None, skip_tests: bool = False, skip_export: bool = False) -> int:
         """Complete a module with testing and export."""
@@ -507,9 +566,9 @@ class ModuleWorkflowCommand(BaseCommand):
         # Handle subcommands
         if hasattr(args, 'module_command') and args.module_command:
             if args.module_command == 'start':
-                return self.start_module(args.module_number)
+                return self.start_module(args.module_number, getattr(args, 'code', False))
             elif args.module_command == 'resume':
-                return self.resume_module(getattr(args, 'module_number', None))
+                return self.resume_module(getattr(args, 'module_number', None), getattr(args, 'code', False))
             elif args.module_command == 'complete':
                 return self.complete_module(
                     getattr(args, 'module_number', None),

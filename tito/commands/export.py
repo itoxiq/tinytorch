@@ -30,8 +30,8 @@ class ExportCommand(BaseCommand):
         "05_autograd": "05",       # Autograd → Learning checkpoint
         "06_optimizers": "06",     # Optimizers → Optimization checkpoint
         "07_training": "07",       # Training → Training checkpoint
-        "08_spatial": "08",        # Spatial → Vision checkpoint
-        "09_dataloader": "09",     # Dataloader → Data checkpoint
+        "08_dataloader": "08",        # Dataloader → Vision checkpoint
+        "09_spatial": "09",     # Spatial → Data checkpoint
         "10_tokenization": "10",   # Tokenization → Language checkpoint
         "11_embeddings": "11",     # Embeddings → Representation checkpoint
         "12_attention": "12",      # Attention → Attention checkpoint
@@ -70,8 +70,9 @@ class ExportCommand(BaseCommand):
             short_name = module_name[3:]  # Remove "00_" prefix
         else:
             short_name = module_name
-        
-        # Use regular .py file (has complete exports)
+
+        # Use student file (e.g., tensor.py - contains student work with #| default_exp directive)
+        # Note: _solution.py files are reference implementations, not used for export
         dev_file = module_path / f"{short_name}.py"
         if not dev_file.exists():
             return "unknown"
